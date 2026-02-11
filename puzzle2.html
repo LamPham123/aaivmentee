@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stage 2 — The Exam | Who Am I?</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .mc-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+      transition: border-color 0.3s;
+      position: relative;
+    }
+
+    .mc-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 12px 12px 0 0;
+    }
+
+    .mc-card.solved { border-color: var(--green); }
+    .mc-card.solved::before { background: var(--green); }
+
+    .mc-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .mc-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      flex: 1;
+    }
+
+    .mc-points {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .mc-status {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .mc-status.done { color: var(--green); }
+
+    .mc-question {
+      color: var(--text);
+      line-height: 1.85;
+      font-size: 0.92rem;
+      margin-bottom: 6px;
+    }
+
+    .equation {
+      display: inline-block;
+      font-family: 'Share Tech Mono', monospace;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 14px;
+      margin: 10px 0 4px;
+      font-size: 0.88rem;
+      color: var(--accent2);
+    }
+
+    .mc-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-style: italic;
+      margin: 10px 0 8px;
+      letter-spacing: 0.04em;
+    }
+
+    .mc-ref {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 8px;
+      opacity: 0.65;
+    }
+
+    .mc-options {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .mc-opt {
+      text-align: left;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.84rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      line-height: 1.6;
+    }
+
+    .mc-opt:hover:not(.locked) {
+      border-color: var(--accent);
+      background: rgba(79,142,247,0.07);
+    }
+
+    .mc-opt.selected {
+      border-color: var(--accent);
+      background: rgba(79,142,247,0.12);
+      color: var(--accent);
+    }
+
+    .mc-opt.correct {
+      border-color: var(--green);
+      background: rgba(34,211,160,0.1);
+      color: var(--green);
+    }
+
+    .mc-opt.locked { cursor: default; }
+
+    @keyframes wrongFlash {
+      0%   { border-color: var(--red); background: rgba(255,80,80,0.12); }
+      100% { border-color: var(--border); background: #0d1117; }
+    }
+
+    .mc-opt.wrong-flash {
+      animation: wrongFlash 0.4s ease forwards;
+    }
+
+    .mc-footer {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .mc-submit {
+      padding: 10px 20px;
+      background: rgba(79,142,247,0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      border-radius: 7px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .mc-submit:hover { background: rgba(79,142,247,0.25); }
+
+    .mc-feedback {
+      font-size: 0.82rem;
+      flex: 1;
+    }
+
+    sub, sup { font-size: 0.72em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="site-header">
+      <p class="stage-label">Stage 2 of 5</p>
+      <h1 class="title">THE EXAM</h1>
+      <h2 class="subtitle">5 questions · select all that apply</h2>
+    </header>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Progress</span><span>2 / 5</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 40%"></div></div>
+    </div>
+
+    <div class="step-dots">
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="mc-card" id="card-1">
+      <div class="mc-header">
+        <span class="mc-num">QUESTION 01</span>
+        <span class="mc-points">5 PTS</span>
+        <span class="mc-status" id="status-1">UNSOLVED</span>
+      </div>
+      <div class="mc-question">
+        The base reaction for NH<sub>3</sub> has an equilibrium constant K<sub>b</sub> = 1.8×10<sup>−5</sup>.
+        If, at equilibrium, we lower the pH by one unit by adding a small amount of HCl, then…
+        <br/><span class="equation">NH<sub>3</sub> + H<sub>2</sub>O &nbsp;⇌&nbsp; NH<sub>4</sub><sup>+</sup> + OH<sup>−</sup></span>
+      </div>
+      <p class="mc-note">Select all that apply.</p>
+      <div class="mc-options" id="opts-1">
+        <button class="mc-opt" data-key="a" onclick="toggleOpt(1,'a')">a.&nbsp; The reaction shifts to the left</button>
+        <button class="mc-opt" data-key="b" onclick="toggleOpt(1,'b')">b.&nbsp; The reaction shifts to the right</button>
+        <button class="mc-opt" data-key="c" onclick="toggleOpt(1,'c')">c.&nbsp; Nothing happens since I am at equilibrium already</button>
+        <button class="mc-opt" data-key="d" onclick="toggleOpt(1,'d')">d.&nbsp; I cannot answer unless and until I calculate Q and compare it to K</button>
+      </div>
+      <div class="mc-footer">
+        <button class="mc-submit" id="btn-1" onclick="checkMC(1)">CHECK</button>
+        <div class="mc-feedback" id="fb-1"></div>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="mc-card" id="card-2">
+      <div class="mc-header">
+        <span class="mc-num">QUESTION 02</span>
+        <span class="mc-points">5 PTS</span>
+        <span class="mc-status" id="status-2">UNSOLVED</span>
+      </div>
+      <div class="mc-question">
+        Compare the pH of a 1.8×10<sup>−5</sup> M solution of ammonia with a 1.8×10<sup>−5</sup> M solution of NaOH.
+      </div>
+      <p class="mc-note">Select all that apply.</p>
+      <div class="mc-options" id="opts-2">
+        <button class="mc-opt" data-key="a" onclick="toggleOpt(2,'a')">a.&nbsp; pH of NH<sub>3</sub> = pH of NaOH</button>
+        <button class="mc-opt" data-key="b" onclick="toggleOpt(2,'b')">b.&nbsp; pOH of NH<sub>3</sub> = pOH of NaOH</button>
+        <button class="mc-opt" data-key="c" onclick="toggleOpt(2,'c')">c.&nbsp; pH of NH<sub>3</sub> &lt; pH of NaOH</button>
+        <button class="mc-opt" data-key="d" onclick="toggleOpt(2,'d')">d.&nbsp; pH of NH<sub>3</sub> &gt; pH of NaOH</button>
+        <button class="mc-opt" data-key="e" onclick="toggleOpt(2,'e')">e.&nbsp; pOH of NH<sub>3</sub> &lt; pOH of NaOH</button>
+        <button class="mc-opt" data-key="f" onclick="toggleOpt(2,'f')">f.&nbsp; pOH of NH<sub>3</sub> &gt; pOH of NaOH</button>
+      </div>
+      <div class="mc-footer">
+        <button class="mc-submit" id="btn-2" onclick="checkMC(2)">CHECK</button>
+        <div class="mc-feedback" id="fb-2"></div>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="mc-card" id="card-3">
+      <div class="mc-header">
+        <span class="mc-num">QUESTION 03</span>
+        <span class="mc-points">5 PTS</span>
+        <span class="mc-status" id="status-3">UNSOLVED</span>
+      </div>
+      <div class="mc-question">
+        Compare the pH of a 1 M solution of NH<sub>3</sub> with a 1.8×10<sup>−5</sup> M solution of NH<sub>3</sub>.
+      </div>
+      <p class="mc-note">Select all that apply.</p>
+      <div class="mc-options" id="opts-3">
+        <button class="mc-opt" data-key="a" onclick="toggleOpt(3,'a')">a.&nbsp; pH is the same because the same base is dissolved</button>
+        <button class="mc-opt" data-key="b" onclick="toggleOpt(3,'b')">b.&nbsp; Cannot answer without doing a full calculation of the pOH</button>
+        <button class="mc-opt" data-key="c" onclick="toggleOpt(3,'c')">c.&nbsp; pOH is the same because the same base is dissolved</button>
+        <button class="mc-opt" data-key="d" onclick="toggleOpt(3,'d')">d.&nbsp; pOH of 1 M NH<sub>3</sub> &gt; pOH of 1.8×10<sup>−5</sup> M NH<sub>3</sub></button>
+        <button class="mc-opt" data-key="e" onclick="toggleOpt(3,'e')">e.&nbsp; pOH of 1 M NH<sub>3</sub> &lt; pOH of 1.8×10<sup>−5</sup> M NH<sub>3</sub></button>
+        <button class="mc-opt" data-key="f" onclick="toggleOpt(3,'f')">f.&nbsp; pH of 1 M NH<sub>3</sub> &gt; pH of 1.8×10<sup>−5</sup> M NH<sub>3</sub></button>
+        <button class="mc-opt" data-key="g" onclick="toggleOpt(3,'g')">g.&nbsp; pH of 1 M NH<sub>3</sub> &lt; pH of 1.8×10<sup>−5</sup> M NH<sub>3</sub></button>
+      </div>
+      <div class="mc-footer">
+        <button class="mc-submit" id="btn-3" onclick="checkMC(3)">CHECK</button>
+        <div class="mc-feedback" id="fb-3"></div>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="mc-card" id="card-4">
+      <div class="mc-header">
+        <span class="mc-num">QUESTION 04</span>
+        <span class="mc-points">5 PTS</span>
+        <span class="mc-status" id="status-4">UNSOLVED</span>
+      </div>
+      <div class="mc-question">
+        Rank 1.8×10<sup>−5</sup> M solutions of NaOH, NH<sub>3</sub>, F<sup>−</sup> and HCO<sub>3</sub><sup>−</sup>
+        in order of <strong>increasing pOH</strong>.
+      </div>
+      <p class="mc-note">Select all that apply.</p>
+      <div class="mc-options" id="opts-4">
+        <button class="mc-opt" data-key="a" onclick="toggleOpt(4,'a')">a.&nbsp; F<sup>−</sup> &lt; HCO<sub>3</sub><sup>−</sup> &lt; NH<sub>3</sub> &lt; NaOH</button>
+        <button class="mc-opt" data-key="b" onclick="toggleOpt(4,'b')">b.&nbsp; F<sup>−</sup> &lt; HCO<sub>3</sub><sup>−</sup> &lt; NaOH &lt; NH<sub>3</sub></button>
+        <button class="mc-opt" data-key="c" onclick="toggleOpt(4,'c')">c.&nbsp; NaOH &lt; NH<sub>3</sub> &lt; HCO<sub>3</sub><sup>−</sup> &lt; F<sup>−</sup></button>
+        <button class="mc-opt" data-key="d" onclick="toggleOpt(4,'d')">d.&nbsp; NH<sub>3</sub> &lt; F<sup>−</sup> &lt; NaOH &lt; HCO<sub>3</sub><sup>−</sup></button>
+      </div>
+      <div class="mc-footer">
+        <button class="mc-submit" id="btn-4" onclick="checkMC(4)">CHECK</button>
+        <div class="mc-feedback" id="fb-4"></div>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="mc-card" id="card-5">
+      <div class="mc-header">
+        <span class="mc-num">QUESTION 05</span>
+        <span class="mc-points">5 PTS</span>
+        <span class="mc-status" id="status-5">UNSOLVED</span>
+      </div>
+      <div class="mc-question">
+        Which of the following pairs are conjugate acid-base pairs?
+      </div>
+      <p class="mc-note">Select all that apply.</p>
+      <div class="mc-options" id="opts-5">
+        <button class="mc-opt" data-key="a" onclick="toggleOpt(5,'a')">a.&nbsp; HF and F<sup>−</sup></button>
+        <button class="mc-opt" data-key="b" onclick="toggleOpt(5,'b')">b.&nbsp; HCOOH and HCOO<sup>−</sup></button>
+        <button class="mc-opt" data-key="c" onclick="toggleOpt(5,'c')">c.&nbsp; NH<sub>3</sub> and NH<sub>4</sub><sup>+</sup></button>
+        <button class="mc-opt" data-key="d" onclick="toggleOpt(5,'d')">d.&nbsp; H<sub>2</sub>CO<sub>3</sub> and HCO<sub>3</sub><sup>−</sup></button>
+        <button class="mc-opt" data-key="e" onclick="toggleOpt(5,'e')">e.&nbsp; HCO<sub>3</sub><sup>−</sup> and HCO<sub>3</sub><sup>−</sup></button>
+      </div>
+      <div class="mc-footer">
+        <button class="mc-submit" id="btn-5" onclick="checkMC(5)">CHECK</button>
+        <div class="mc-feedback" id="fb-5"></div>
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div class="success-banner" id="success">
+      <p class="big">✓ &nbsp; ALL QUESTIONS CORRECT!</p>
+      <p style="color:var(--text); margin-bottom:16px">
+        Chemistry unlocked. You know your equilibria.<br/>
+        Keep going — the next stage awaits.
+      </p>
+      <a href="puzzle3.html" class="btn">NEXT STAGE →</a>
+    </div>
+
+  </div>
+
+  <script>
+    const ANSWERS = {
+      1: ['b'],
+      2: ['c', 'f'],
+      3: ['e', 'f'],
+      4: ['c'],
+      5: ['a', 'b', 'c', 'd']
+    };
+
+    const selected = {
+      1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set()
+    };
+    const solved = { 1: false, 2: false, 3: false, 4: false, 5: false };
+    const tries  = { 1: 0,     2: 0,     3: 0,     4: 0,     5: 0 };
+
+    function toggleOpt(q, key) {
+      if (solved[q]) return;
+      const btn = document.querySelector('#opts-' + q + ' [data-key="' + key + '"]');
+      if (selected[q].has(key)) {
+        selected[q].delete(key);
+        btn.classList.remove('selected');
+      } else {
+        selected[q].add(key);
+        btn.classList.add('selected');
+      }
+    }
+
+    function checkMC(q) {
+      if (solved[q]) return;
+      const correct = ANSWERS[q];
+      const chosen  = [...selected[q]].sort();
+      const fb      = document.getElementById('fb-' + q);
+
+      if (chosen.length === 0) {
+        fb.style.color = 'var(--muted)';
+        fb.textContent = 'Select at least one option.';
+        return;
+      }
+
+      const isCorrect =
+        chosen.length === correct.length &&
+        chosen.every(k => correct.includes(k));
+
+      if (isCorrect) {
+        document.querySelectorAll('#opts-' + q + ' .mc-opt').forEach(btn => {
+          btn.classList.remove('selected');
+          btn.classList.add('locked');
+          if (correct.includes(btn.dataset.key)) btn.classList.add('correct');
+        });
+        document.getElementById('btn-' + q).style.display = 'none';
+        fb.style.color = 'var(--green)';
+        fb.textContent = '✓ Correct!';
+        document.getElementById('status-' + q).textContent = '✓ SOLVED';
+        document.getElementById('status-' + q).className = 'mc-status done';
+        document.getElementById('card-' + q).classList.add('solved');
+        solved[q] = true;
+
+        if (Object.values(solved).every(Boolean)) {
+          setTimeout(() => document.getElementById('success').classList.add('show'), 600);
+        }
+      } else {
+        tries[q]++;
+        document.querySelectorAll('#opts-' + q + ' .mc-opt.selected').forEach(btn => {
+          btn.classList.add('wrong-flash');
+          setTimeout(() => btn.classList.remove('wrong-flash'), 420);
+        });
+        fb.style.color = 'var(--red)';
+        if (tries[q] === 1) {
+          fb.textContent = '✗ Not quite — check your selections.';
+        } else {
+          fb.textContent = '💡 Hint: ' + correct.length + ' correct answer' +
+            (correct.length > 1 ? 's' : '') + ' for this question.';
+        }
+      }
+    }
+  </script>
+</body>
+</html>

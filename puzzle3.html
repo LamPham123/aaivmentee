@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stage 3 — Crossword | Who Am I?</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .cw-wrapper { overflow-x: auto; display: flex; justify-content: center; margin: 20px 0; }
+    .cw-table { border-collapse: collapse; }
+    .cw-table td { width: 38px; height: 38px; padding: 0; position: relative; }
+    .cell-blocked { background: var(--bg); border: none; }
+    .cell-active { background: #111827; border: 1px solid #2a3f6e; cursor: text; }
+    .cell-active.filled-correct { background: rgba(34,211,160,0.1); border-color: var(--green); }
+    .cell-num { position: absolute; top: 2px; left: 3px; font-size: 0.5rem; color: var(--accent); font-family: 'Orbitron', sans-serif; line-height: 1; pointer-events: none; z-index: 1; }
+    .cell-letter { width: 100%; height: 100%; background: transparent; border: none; color: var(--green); font-family: 'Share Tech Mono', monospace; font-size: 1.05rem; font-weight: bold; text-align: center; text-transform: uppercase; outline: none; caret-color: transparent; padding: 0; }
+    .clues-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 24px 0; }
+    @media (max-width: 560px) { .clues-wrap { grid-template-columns: 1fr; } }
+    .clue-section-title { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: var(--accent); letter-spacing: 0.15em; margin-bottom: 12px; text-transform: uppercase; }
+    .clue-entry { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+    .clue-entry-header { display: flex; align-items: baseline; gap: 8px; }
+    .clue-n { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; color: var(--accent2); font-weight: 700; min-width: 18px; }
+    .clue-text { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+    .clue-len { color: var(--muted); font-size: 0.75rem; }
+    .clue-input-row { display: flex; gap: 8px; align-items: center; }
+    .clue-inp { flex: 1; background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 7px 12px; color: var(--green); font-family: 'Share Tech Mono', monospace; font-size: 0.88rem; letter-spacing: 0.08em; outline: none; transition: border-color 0.2s; text-transform: uppercase; }
+    .clue-inp:focus { border-color: var(--accent); box-shadow: var(--glow); }
+    .clue-inp.ok  { border-color: var(--green); box-shadow: 0 0 8px rgba(34,211,160,0.3); }
+    .clue-inp.bad { border-color: var(--red); animation: shake 0.3s ease; }
+    .clue-check { padding: 7px 14px; background: rgba(79,142,247,0.12); border: 1px solid var(--accent); color: var(--accent); font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+    .clue-check:hover { background: rgba(79,142,247,0.22); }
+    .solved-badge { display: inline-block; background: rgba(34,211,160,0.1); border: 1px solid var(--green); border-radius: 4px; padding: 3px 8px; font-size: 0.65rem; color: var(--green); font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em; margin-left: 6px; }
+    .score-wrap { text-align: center; margin-bottom: 20px; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: var(--muted); }
+    .score-wrap span { color: var(--accent); font-size: 1.1rem; font-weight: 900; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="site-header">
+      <p class="stage-label">Stage 3 of 5</p>
+      <h1 class="title">CROSSWORD</h1>
+      <h2 class="subtitle">Fill in the grid. Every answer is a clue.</h2>
+    </header>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Progress</span><span>3 / 5</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 60%"></div></div>
+    </div>
+
+    <div class="step-dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+
+    <div class="score-wrap">Words solved: <span id="score">0</span> / 8</div>
+
+    <div class="cw-wrapper">
+      <table class="cw-table" id="cw-grid"></table>
+    </div>
+
+    <div class="clues-wrap">
+      <div>
+        <p class="clue-section-title">Across</p>
+        <div class="clue-entry" id="entry-4a">
+          <div class="clue-entry-header">
+            <span class="clue-n">4</span>
+            <span class="clue-text">What keystone does Jinx go <span class="clue-len">(11)</span></span>
+          </div>
+          <div class="clue-input-row">
+            <input class="clue-inp" id="inp-4a" maxlength="11" placeholder="_ _ _ _ _ _ _ _ _ _ _" autocomplete="off" spellcheck="false" />
+            <button class="clue-check" onclick="checkWord('4a')">OK</button>
+          </div>
+        </div>
+        <div class="clue-entry" id="entry-6a">
+          <div class="clue-entry-header">
+            <span class="clue-n">6</span>
+            <span class="clue-text">What region is Lux from <span class="clue-len">(7)</span></span>
+          </div>
+          <div class="clue-input-row">
+            <input class="clue-inp" id="inp-6a" maxlength="7" placeholder="_ _ _ _ _ _ _" autocomplete="off" spellcheck="false" />
+            <button class="clue-check" onclick="checkWord('6a')">OK</button>
+          </div>
+        </div>
+        <div class="clue-entry" id="entry-8a">
+          <div class="clue-entry-header">
+            <span class="clue-n">8</span>
+            <span class="clue-text">What do you destroy to win the game <span class="clue-len">(5)</span></span>
+          </div>
+          <div class="clue-input-row">
+            <input class="clue-inp" id="inp-8a" maxlength="5" placeholder="_ _ _ _ _" autocomplete="off" spellcheck="false" />
+            <button class="clue-check" onclick="checkWord('8a')">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="clue-section-title">Down</p>
+        <div class="clue-entry" id="entry-1d">
+          <div class="clue-entry-header">
+            <span class="clue-n">1</span>
+            <span class="clue-text">What is Dr. Mundo's real name <span class="clue-len">(7)</span></span>
+          </div>
+          <div class="clue-input-row">
+            <input class="clue-inp" id="inp-1d" maxlength="7" placeholder="_ _ _ _ _ _ _" autocomplete="off" spellcheck="false" />
+            <button class="clue-check" onclick="checkWord('1d')">OK</button>
+          </div>
+        </div>
+        <div class="clue-entry" id="entry-2d">
+          <div class="clue-entry-header">
+            <span class="clue-n">2</span>
+            <span class="clue-text">Is your mentor better than you at League of Legends <span class="clue-len">(3)</span></span>
+          </div>
+          <div class="clue-input-row">
+            <input class="clue-inp" id="inp-2d" maxlength="3" placeholder="_ _ _" autocomplete="off" spellcheck="false" />
+            <button class="clue-check" onclick="checkWord('2d')">OK</button>
+          </div>
+        </div>
+        <div class="clue-entry" id="entry-3d">
+          <div class="clue-entry-header">
+            <span class="clue-n">3</span>
+            <span class="clue-text">Who is the GOAT of League of Legends <span class="clue-len">(5)</span></span>
+          </div>
+          <div class="clue-input-row">
+            <input class="clue-inp" id="inp-3d" maxlength="5" placeholder="_ _ _ _ _" autocomplete="off" spellcheck="false" />
+            <button class="clue-check" onclick="checkWord('3d')">OK</button>
+          </div>
+        </div>
+        <div class="clue-entry" id="entry-5d">
+          <div class="clue-entry-header">
+            <span class="clue-n">5</span>
+            <span class="clue-text">What rank are you in League right now <span class="clue-len">(8)</span></span>
+          </div>
+          <div class="clue-input-row">
+            <input class="clue-inp" id="inp-5d" maxlength="8" placeholder="_ _ _ _ _ _ _ _" autocomplete="off" spellcheck="false" />
+            <button class="clue-check" onclick="checkWord('5d')">OK</button>
+          </div>
+        </div>
+        <div class="clue-entry" id="entry-7d">
+          <div class="clue-entry-header">
+            <span class="clue-n">7</span>
+            <span class="clue-text">Top, Jungle, Mid, ___, Support <span class="clue-len">(3)</span></span>
+          </div>
+          <div class="clue-input-row">
+            <input class="clue-inp" id="inp-7d" maxlength="3" placeholder="_ _ _" autocomplete="off" spellcheck="false" />
+            <button class="clue-check" onclick="checkWord('7d')">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="success-banner" id="success">
+      <p class="big">✓ &nbsp; PUZZLE COMPLETE!</p>
+      <p style="color:var(--text); margin-bottom:16px">You know your League lore. Time for the next stage.</p>
+      <a href="puzzle4.html" class="btn">NEXT STAGE →</a>
+    </div>
+
+  </div>
+
+  <script>
+  /*
+    Grid (14 rows × 11 cols, 0-indexed):
+
+    Row  0:  . . . . . . . . . . E     ← 1-Down starts (EDMUNDO)
+    Row  1:  . . . . . . . . . . d
+    Row  2:  . . . . . . . . . . m
+    Row  3:  . . . . . . . . . . u
+    Row  4:  . . . . . . . . . . n
+    Row  5:  . Y . . F . . . . . d     ← 2-Down(Y), 3-Down(F) start
+    Row  6:  L e t h a l T e m P o    ← 4-Across (LETHALTEMPO); 5-Down(P), 1-Down(o) end
+    Row  7:  . s . . k . . . . l .
+    Row  8:  . . . D e m A c i a .    ← 6-Across (DEMACIA); 7-Down(A) starts
+    Row  9:  . . . . r . D . . t .
+    Row 10:  . . . . . . C . . i .
+    Row 11:  . . . . . . . . . n .
+    Row 12:  . . . . . . N e x u s    ← 8-Across (NEXUS); 5-Down(u) intersection
+    Row 13:  . . . . . . . . . m .
+
+    Verified intersections:
+      4-Across / 1-Down  @ (6,10)  E[6]=O,  LETHALTEMPO[10]=O  ✓
+      4-Across / 2-Down  @ (6,1)   YES[1]=E, LETHALTEMPO[1]=E   ✓
+      4-Across / 3-Down  @ (6,4)   FAKER[1]=A, LETHALTEMPO[4]=A ✓
+      4-Across / 5-Down  @ (6,9)   PLATINUM[0]=P, LETHALTEMPO[9]=P ✓
+      6-Across / 3-Down  @ (8,4)   FAKER[3]=E, DEMACIA[1]=E     ✓
+      6-Across / 7-Down  @ (8,6)   ADC[0]=A, DEMACIA[3]=A       ✓
+      6-Across / 5-Down  @ (8,9)   PLATINUM[2]=A, DEMACIA[6]=A  ✓
+      8-Across / 5-Down  @ (12,9)  PLATINUM[6]=U, NEXUS[3]=U    ✓
+  */
+
+  const ROWS = 14, COLS = 11;
+  const grid = Array.from({length: ROWS}, () =>
+    Array.from({length: COLS}, () => ({ active: false, letter: '', number: null }))
+  );
+
+  function setCell(r, c, letter, num) {
+    grid[r][c].active = true;
+    grid[r][c].letter = letter.toUpperCase();
+    if (num !== null && grid[r][c].number === null) grid[r][c].number = num;
+  }
+
+  // 1-Down: EDMUNDO, col 10, rows 0-6
+  'EDMUNDO'.split('').forEach((ch, i) => setCell(i, 10, ch, i === 0 ? 1 : null));
+
+  // 2-Down: YES, col 1, rows 5-7
+  'YES'.split('').forEach((ch, i) => setCell(5 + i, 1, ch, i === 0 ? 2 : null));
+
+  // 3-Down: FAKER, col 4, rows 5-9
+  'FAKER'.split('').forEach((ch, i) => setCell(5 + i, 4, ch, i === 0 ? 3 : null));
+
+  // 4-Across: LETHALTEMPO, row 6, cols 0-10
+  'LETHALTEMPO'.split('').forEach((ch, i) => setCell(6, i, ch, i === 0 ? 4 : null));
+
+  // 5-Down: PLATINUM, col 9, rows 6-13
+  'PLATINUM'.split('').forEach((ch, i) => setCell(6 + i, 9, ch, i === 0 ? 5 : null));
+
+  // 6-Across: DEMACIA, row 8, cols 3-9
+  'DEMACIA'.split('').forEach((ch, i) => setCell(8, 3 + i, ch, i === 0 ? 6 : null));
+
+  // 7-Down: ADC, col 6, rows 8-10
+  'ADC'.split('').forEach((ch, i) => setCell(8 + i, 6, ch, i === 0 ? 7 : null));
+
+  // 8-Across: NEXUS, row 12, cols 6-10
+  'NEXUS'.split('').forEach((ch, i) => setCell(12, 6 + i, ch, i === 0 ? 8 : null));
+
+  // Build table
+  const table = document.getElementById('cw-grid');
+  for (let r = 0; r < ROWS; r++) {
+    const tr = document.createElement('tr');
+    for (let c = 0; c < COLS; c++) {
+      const td = document.createElement('td');
+      const cell = grid[r][c];
+      if (!cell.active) {
+        td.className = 'cell-blocked';
+      } else {
+        td.className = 'cell-active';
+        td.id = 'cell-' + r + '-' + c;
+        if (cell.number !== null) {
+          const num = document.createElement('span');
+          num.className = 'cell-num';
+          num.textContent = cell.number;
+          td.appendChild(num);
+        }
+        const inp = document.createElement('input');
+        inp.className = 'cell-letter';
+        inp.maxLength = 1;
+        inp.setAttribute('readonly', 'true');
+        inp.setAttribute('autocomplete', 'off');
+        td.appendChild(inp);
+      }
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+
+  const words = {
+    '1d': { answer: 'EDMUNDO',     cells: [[0,10],[1,10],[2,10],[3,10],[4,10],[5,10],[6,10]] },
+    '2d': { answer: 'YES',         cells: [[5,1],[6,1],[7,1]] },
+    '3d': { answer: 'FAKER',       cells: [[5,4],[6,4],[7,4],[8,4],[9,4]] },
+    '4a': { answer: 'LETHALTEMPO', cells: [[6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[6,6],[6,7],[6,8],[6,9],[6,10]] },
+    '5d': { answer: 'PLATINUM',    cells: [[6,9],[7,9],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9]] },
+    '6a': { answer: 'DEMACIA',     cells: [[8,3],[8,4],[8,5],[8,6],[8,7],[8,8],[8,9]] },
+    '7d': { answer: 'ADC',         cells: [[8,6],[9,6],[10,6]] },
+    '8a': { answer: 'NEXUS',       cells: [[12,6],[12,7],[12,8],[12,9],[12,10]] }
+  };
+
+  const solvedWords = {}, tries = {};
+  let solvedCount = 0;
+
+  function checkWord(id) {
+    if (solvedWords[id]) return;
+    const inp = document.getElementById('inp-' + id);
+    const val = inp.value.trim().toUpperCase();
+    const word = words[id];
+    if (!val) return;
+    tries[id] = (tries[id] || 0) + 1;
+
+    if (val === word.answer) {
+      inp.classList.remove('bad');
+      inp.classList.add('ok');
+      inp.readOnly = true;
+      solvedWords[id] = true;
+      solvedCount++;
+
+      const entry = document.getElementById('entry-' + id);
+      const badge = document.createElement('span');
+      badge.className = 'solved-badge';
+      badge.textContent = '✓';
+      entry.querySelector('.clue-entry-header').appendChild(badge);
+      entry.querySelector('.clue-check').style.display = 'none';
+
+      word.cells.forEach(([r, c], i) => {
+        const cell = document.getElementById('cell-' + r + '-' + c);
+        if (cell) {
+          cell.querySelector('input').value = word.answer[i];
+          cell.classList.add('filled-correct');
+        }
+      });
+
+      document.getElementById('score').textContent = solvedCount;
+      if (solvedCount === 8) {
+        setTimeout(() => document.getElementById('success').classList.add('show'), 500);
+      }
+    } else {
+      inp.classList.add('bad');
+      setTimeout(() => inp.classList.remove('bad'), 400);
+      if (tries[id] >= 2) inp.placeholder = hintMap[id];
+    }
+  }
+
+  const hintMap = {
+    '1d': 'Hint: Ed___do',
+    '2d': 'Hint: Obviously...',
+    '3d': 'Hint: T1 mid laner',
+    '4a': 'Hint: Attack speed keystone',
+    '5d': 'Hint: P, L, A, T...',
+    '6a': 'Hint: Lux says it',
+    '7d': 'Hint: Attack Damage ___',
+    '8a': 'Hint: Big crystal structure'
+  };
+
+  Object.keys(words).forEach(id => {
+    document.getElementById('inp-' + id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkWord(id);
+    });
+  });
+  </script>
+</body>
+</html>

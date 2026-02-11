@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stage 4 — Navigation Lock | Who Am I?</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Screen toggling */
+    #puzzle-screen { display: block; }
+    #unlock-screen { display: none; }
+    #unlock-screen.active { display: block; animation: popIn 0.4s ease; }
+
+    /* Sequence display */
+    #sequence-display {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      min-height: 60px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+      transition: border-color 0.3s, background 0.3s;
+    }
+
+    .direction-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      background: rgba(79, 142, 247, 0.10);
+      border: 1px solid rgba(79, 142, 247, 0.4);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-family: 'Share Tech Mono', monospace;
+      letter-spacing: 0.04em;
+    }
+
+    .seq-counter {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: right;
+      margin-bottom: 20px;
+    }
+
+    /* D-pad */
+    .dpad-container {
+      display: flex;
+      justify-content: center;
+      margin: 24px 0;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 64px);
+      grid-template-rows: repeat(3, 64px);
+      gap: 6px;
+    }
+
+    .direction-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--accent);
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, border-color 0.12s, box-shadow 0.12s, transform 0.1s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .direction-btn:hover {
+      background: rgba(79, 142, 247, 0.12);
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+    }
+
+    .direction-btn:active {
+      background: rgba(79, 142, 247, 0.22);
+      transform: scale(0.92);
+    }
+
+    .dpad-up    { grid-column: 2; grid-row: 1; }
+    .dpad-left  { grid-column: 1; grid-row: 2; }
+    .dpad-right { grid-column: 3; grid-row: 2; }
+    .dpad-down  { grid-column: 2; grid-row: 3; }
+
+    /* Center ornament (non-interactive) */
+    .dpad-center {
+      grid-column: 2;
+      grid-row: 2;
+      background: rgba(79, 142, 247, 0.05);
+      border: 1px solid rgba(79, 142, 247, 0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      color: rgba(79, 142, 247, 0.3);
+      letter-spacing: 0.05em;
+      font-family: 'Orbitron', sans-serif;
+      pointer-events: none;
+    }
+
+    /* Action row */
+    .action-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    #restart-btn {
+      background: transparent;
+      border: 1px solid var(--accent2);
+      color: var(--accent2);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.3s ease;
+      white-space: nowrap;
+    }
+
+    #restart-btn:hover {
+      background: rgba(168, 85, 247, 0.10);
+    }
+
+    #submit-btn {
+      flex: 1;
+    }
+
+    /* Keyboard hint */
+    .kb-hint {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-top: 12px;
+    }
+
+    /* Unlock screen */
+    .unlock-content {
+      text-align: center;
+      padding: 12px 0 20px;
+    }
+
+    .unlock-icon {
+      font-size: 2.6rem;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .unlock-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.15rem;
+      color: var(--green);
+      margin-bottom: 12px;
+      letter-spacing: 0.12em;
+    }
+
+    #try-again-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: 'Share Tech Mono', monospace;
+      letter-spacing: 0.06em;
+      padding: 4px 0;
+      transition: color 0.2s;
+    }
+
+    #try-again-btn:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="site-header">
+      <p class="stage-label">Stage 4 of 5</p>
+      <h1 class="title">NAVIGATION LOCK</h1>
+      <h2 class="subtitle">Follow the path your mentor left behind.</h2>
+    </header>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Progress</span><span>4 / 5</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 80%"></div></div>
+    </div>
+
+    <div class="step-dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+    </div>
+
+    <!-- Intro -->
+    <div class="panel">
+      <p class="panel-title">The Sequence</p>
+      <p>
+        Your mentor encoded the final key inside a <strong style="color:var(--accent)">directional lock</strong>.
+        The correct sequence of moves will disengage it — but only if you know the pattern.
+      </p>
+      <p>
+        You burst through the grand doors of Suzzallo Library, following the breadcrumbs of your mentor’s erratic path. You race up the stairs and bank right past the vending machines, then cut left into the narrow stacks. You crouch down to check a low aisle, then spring up to scan the mezzanine.
+
+Darting left into the Reading Room and right toward the stained glass, you look down at the floor—there! A dropped notebook. You spin left, dodge right, and weave left through the heavy oak tables. Finally, you descend down into the quietest corner of the basement, sitting down on the floor next to him as he stares up at a massive, ancient map he’d been searching for all along. "Found you," you whisper.
+      </p>
+      <p class="dim">Use the D-pad (or arrow keys) to enter the sequence, then submit.</p>
+    </div>
+
+    <!-- Puzzle screen -->
+    <div id="puzzle-screen">
+      <div class="panel">
+        <p class="panel-title">Input Sequence</p>
+
+        <div id="sequence-display">
+          <span style="color: var(--muted);">Enter directions...</span>
+        </div>
+        <div class="seq-counter" id="seq-counter">0 steps entered</div>
+
+        <!-- D-pad -->
+        <div class="dpad-container">
+          <div class="dpad">
+            <button class="direction-btn dpad-up"    data-direction="up"    aria-label="Up">↑</button>
+            <button class="direction-btn dpad-left"  data-direction="left"  aria-label="Left">←</button>
+            <div    class="dpad-center">◎</div>
+            <button class="direction-btn dpad-right" data-direction="right" aria-label="Right">→</button>
+            <button class="direction-btn dpad-down"  data-direction="down"  aria-label="Down">↓</button>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button id="restart-btn">↺ Reset</button>
+          <button class="btn" id="submit-btn">SUBMIT</button>
+        </div>
+
+        <p class="kb-hint">[ Arrow keys also supported ]</p>
+      </div>
+    </div>
+
+    <!-- Unlock screen -->
+    <div id="unlock-screen">
+      <div class="panel">
+        <div class="unlock-content">
+          <span class="unlock-icon">🔓</span>
+          <p class="unlock-title">ACCESS GRANTED</p>
+          <p style="color: var(--text); margin-bottom: 8px;">
+            The lock releases. Sequence confirmed.
+          </p>
+          <p style="color: var(--green); font-weight: bold; margin-bottom: 16px;">
+            You know your mentor's moves better than anyone.
+          </p>
+          <p class="dim" style="margin-bottom: 28px;">One final stage remains — the ultimate reveal.</p>
+          <a href="puzzle5.html" class="btn">FINAL STAGE →</a>
+        </div>
+        <hr class="divider" />
+        <div style="text-align: center;">
+          <button id="try-again-btn">Wrong sequence? Try again</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Configuration - Set your correct direction sequence here
+    const CORRECT_SEQUENCE = ['up', 'right', 'left', 'down', 'up', 'left', 'right', 'down', 'left', 'right', 'left', 'down', 'down', 'up']; // Example sequence - change this to match your puzzle
+
+    // State management
+    let currentSequence = [];
+
+    // Get DOM elements
+    const directionButtons = document.querySelectorAll('.direction-btn');
+    const sequenceDisplay = document.getElementById('sequence-display');
+    const seqCounter = document.getElementById('seq-counter');
+    const restartBtn = document.getElementById('restart-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const puzzleScreen = document.getElementById('puzzle-screen');
+    const unlockScreen = document.getElementById('unlock-screen');
+    const tryAgainBtn = document.getElementById('try-again-btn');
+
+    // Initialize
+    function init() {
+      // Direction buttons
+      directionButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const direction = btn.dataset.direction;
+          if (!direction) return;
+          addDirection(direction, btn);
+        });
+      });
+
+      // Keyboard arrow support
+      document.addEventListener('keydown', e => {
+        if (unlockScreen.classList.contains('active')) return;
+        const map = {
+          ArrowUp: 'up', ArrowDown: 'down',
+          ArrowLeft: 'left', ArrowRight: 'right'
+        };
+        if (map[e.key]) {
+          e.preventDefault();
+          const direction = map[e.key];
+          const btn = document.querySelector(`.direction-btn[data-direction="${direction}"]`);
+          addDirection(direction, btn);
+        }
+        if (e.key === 'Enter') checkSequence();
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+          currentSequence.pop();
+          updateDisplay();
+        }
+      });
+
+      restartBtn.addEventListener('click', resetSequence);
+      submitBtn.addEventListener('click', checkSequence);
+
+      tryAgainBtn.addEventListener('click', () => {
+        unlockScreen.classList.remove('active');
+        puzzleScreen.style.display = 'block';
+        resetSequence();
+      });
+
+      updateDisplay();
+    }
+
+    // Add a direction to the sequence
+    function addDirection(direction, btnEl) {
+      currentSequence.push(direction);
+      updateDisplay();
+
+      if (btnEl) {
+        btnEl.style.transform = 'scale(0.88)';
+        btnEl.style.background = 'rgba(79,142,247,0.22)';
+        setTimeout(() => {
+          btnEl.style.transform = '';
+          btnEl.style.background = '';
+        }, 140);
+      }
+    }
+
+    // Update the sequence display
+    function updateDisplay() {
+      sequenceDisplay.innerHTML = '';
+
+      if (currentSequence.length === 0) {
+        sequenceDisplay.innerHTML = '<span style="color: var(--muted);">Enter directions...</span>';
+        seqCounter.textContent = '0 steps entered';
+        return;
+      }
+
+      currentSequence.forEach(direction => {
+        const directionItem = document.createElement('div');
+        directionItem.className = 'direction-item';
+
+        let arrow = '';
+        switch (direction) {
+          case 'up':    arrow = '↑'; break;
+          case 'down':  arrow = '↓'; break;
+          case 'left':  arrow = '←'; break;
+          case 'right': arrow = '→'; break;
+        }
+
+        directionItem.textContent = `${arrow} ${direction}`;
+        sequenceDisplay.appendChild(directionItem);
+      });
+
+      const n = currentSequence.length;
+      seqCounter.textContent = `${n} step${n !== 1 ? 's' : ''} entered`;
+    }
+
+    // Reset the sequence
+    function resetSequence() {
+      currentSequence = [];
+      updateDisplay();
+
+      restartBtn.style.transition = 'transform 0.35s ease';
+      restartBtn.style.transform = 'rotate(360deg)';
+      setTimeout(() => {
+        restartBtn.style.transform = '';
+      }, 350);
+    }
+
+    // Check if the sequence is correct
+    function checkSequence() {
+      if (currentSequence.length === 0) {
+        showFeedback('Please enter a direction sequence first!', 'error');
+        return;
+      }
+
+      if (arraysEqual(currentSequence, CORRECT_SEQUENCE)) {
+        // Correct!
+        sequenceDisplay.style.background = 'linear-gradient(135deg, rgba(34,211,160,0.15) 0%, rgba(79,142,247,0.15) 100%)';
+        sequenceDisplay.style.borderColor = 'var(--green)';
+
+        setTimeout(() => {
+          sequenceDisplay.style.background = '';
+          sequenceDisplay.style.borderColor = '';
+          puzzleScreen.style.display = 'none';
+          unlockScreen.classList.add('active');
+        }, 450);
+      } else {
+        showFeedback('Incorrect sequence. Try again.', 'error');
+        shakeElement(sequenceDisplay);
+      }
+    }
+
+    // Compare two arrays
+    function arraysEqual(arr1, arr2) {
+      if (arr1.length !== arr2.length) return false;
+      for (let i = 0; i < arr1.length; i++) {
+        if (arr1[i] !== arr2[i]) return false;
+      }
+      return true;
+    }
+
+    // Show feedback toast
+    function showFeedback(message, type) {
+      const feedback = document.createElement('div');
+      feedback.textContent = message;
+      feedback.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 28px;
+        border-radius: 8px;
+        background: ${type === 'error' ? 'rgba(248,113,113,0.95)' : 'rgba(34,211,160,0.95)'};
+        color: #fff;
+        font-weight: 600;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.88rem;
+        letter-spacing: 0.05em;
+        z-index: 1000;
+        animation: slideDown 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        white-space: nowrap;
+      `;
+      document.body.appendChild(feedback);
+
+      setTimeout(() => {
+        feedback.style.animation = 'slideUp 0.3s ease';
+        setTimeout(() => feedback.remove(), 300);
+      }, 2000);
+    }
+
+    // Shake animation
+    function shakeElement(element) {
+      element.style.animation = 'seqShake 0.5s ease';
+      element.style.borderColor = 'var(--red)';
+      setTimeout(() => {
+        element.style.animation = '';
+        element.style.borderColor = '';
+      }, 520);
+    }
+
+    // Inject keyframe animations
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+      @keyframes slideUp {
+        from { opacity: 1; transform: translateX(-50%) translateY(0); }
+        to   { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+      }
+      @keyframes seqShake {
+        0%, 100% { transform: translateX(0); }
+        12%, 36%, 60%, 84% { transform: translateX(-9px); }
+        24%, 48%, 72%, 96% { transform: translateX(9px); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Boot
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>

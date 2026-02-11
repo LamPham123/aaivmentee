@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stage 5 — Final Reveal | Who Am I?</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .jigsaw-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    /* ── Board ── */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, var(--ps));
+      grid-template-rows: repeat(3, var(--ps));
+      gap: 3px;
+      background: rgba(79,142,247,0.08);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 6px;
+      --ps: 110px;
+    }
+
+    @media (max-width: 420px) {
+      .board { --ps: 90px; }
+    }
+
+    .slot {
+      width: var(--ps);
+      height: var(--ps);
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .slot-num {
+      color: var(--border);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem;
+      position: absolute;
+      top: 4px;
+      left: 5px;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .slot.target-active {
+      border-color: var(--accent);
+      background: rgba(79,142,247,0.1);
+    }
+
+    .slot.locked {
+      border: 2px solid var(--green);
+      cursor: default;
+    }
+
+    /* ── Pieces ── */
+    .piece {
+      width: var(--ps);
+      height: var(--ps);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      border: 2px solid transparent;
+      background-repeat: no-repeat;
+      background-size: 300% 300%;
+      box-sizing: border-box;
+      position: relative;
+      flex-shrink: 0;
+      --ps: 110px;
+    }
+
+    @media (max-width: 420px) {
+      .piece { --ps: 90px; }
+    }
+
+    .piece:hover {
+      transform: scale(1.04);
+      box-shadow: 0 0 14px rgba(79,142,247,0.5);
+    }
+
+    .piece.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 18px rgba(79,142,247,0.7);
+      transform: scale(1.06);
+    }
+
+    .piece.locked-piece {
+      border-color: var(--green);
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Tray ── */
+    .tray {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 80px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .tray-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    /* ── Progress Ring ── */
+    .progress-ring-wrap {
+      text-align: center;
+    }
+
+    .piece-count {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .piece-count span {
+      color: var(--accent);
+      font-size: 1.1rem;
+      font-weight: 900;
+    }
+
+    /* ── Reveal overlay ── */
+    #reveal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,14,26,0.96);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+      animation: fadeIn 0.6s ease;
+    }
+
+    #reveal-overlay.show { display: flex; }
+
+    .reveal-photo-frame {
+      width: 240px;
+      height: 240px;
+      border: 3px solid var(--green);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(34,211,160,0.4);
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    .reveal-photo-frame canvas,
+    .reveal-photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .reveal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--green), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .reveal-message {
+      color: var(--text);
+      font-size: 1rem;
+      max-width: 420px;
+      line-height: 1.8;
+      margin-bottom: 24px;
+    }
+
+    .reveal-message strong {
+      color: var(--green);
+    }
+
+    .final-note {
+      font-size: 0.85rem;
+      color: var(--accent2);
+      font-style: italic;
+      max-width: 380px;
+      line-height: 1.7;
+    }
+
+    /* Confetti canvas */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    /* Hint */
+    .how-to {
+      background: rgba(79,142,247,0.06);
+      border: 1px solid rgba(79,142,247,0.2);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Reveal Overlay -->
+  <div id="reveal-overlay">
+    <div class="reveal-photo-frame">
+      <!-- Full assembled image shown here -->
+      <canvas id="reveal-canvas"></canvas>
+    </div>
+    <p class="reveal-title">THIS IS YOUR MENTOR.</p>
+    <p class="reveal-message">
+      You solved every puzzle, decoded every clue, and followed every breadcrumb
+      to get here.<br/><br/>
+      <strong>text 253-455-3286 and ask me to hangout lol.
+    </p>
+    <p class="final-note">
+      "Now you know who I am — but the real question is,<br/>
+      who will <em>you</em> become?"
+    </p>
+  </div>
+
+  <div class="container">
+
+    <header class="site-header">
+      <p class="stage-label">Stage 5 of 5 — Final Stage</p>
+      <h1 class="title">THE REVEAL</h1>
+      <h2 class="subtitle">Assemble the jigsaw to see who it is.</h2>
+    </header>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Progress</span><span>5 / 5</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 100%"></div></div>
+    </div>
+
+    <div class="step-dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+
+    <div class="how-to">
+      Click a piece in the tray below, then click the matching slot on the board to place it.<br/>
+      <span style="color:var(--accent)">The numbers on the slots match the numbers on the pieces.</span>
+    </div>
+
+    <div class="panel">
+      <div class="jigsaw-wrap">
+
+        <div class="progress-ring-wrap">
+          <p class="piece-count">Pieces placed: <span id="placed">0</span> / 9</p>
+        </div>
+
+        <!-- 3×3 Board -->
+        <div class="board" id="board"></div>
+
+        <!-- Tray -->
+        <div>
+          <p class="tray-label">Piece Tray — Click to select, then click a board slot</p>
+          <div class="tray" id="tray"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+  /*
+   * ──────────────────────────────────────────
+   *  CONFIG — replace 'mentor.jpg' with your
+   *  actual photo filename (put it in this
+   *  same folder). Supported: .jpg .png .webp
+   * ──────────────────────────────────────────
+   */
+  const IMAGE_SRC = 'mentor.jpg';
+  const GRID      = 3;          // 3×3 puzzle
+  const TOTAL     = GRID * GRID; // 9 pieces
+
+  // ── State ──
+  let selectedPiece = null;  // currently selected piece id (0-8) or null
+  let placedCount   = 0;
+  const locked      = new Array(TOTAL).fill(false); // which board slots are filled
+  const img         = new Image();
+
+  // ── Piece → background-position mapping ──
+  // piece id = row*GRID + col
+  function bpx(id) {
+    const col = id % GRID;
+    const row = Math.floor(id / GRID);
+    const x   = col === 0 ? 0 : col === 1 ? 50 : 100;
+    const y   = row === 0 ? 0 : row === 1 ? 50 : 100;
+    return `${x}% ${y}%`;
+  }
+
+  // ── Build Board Slots ──
+  const board = document.getElementById('board');
+  for (let i = 0; i < TOTAL; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.dataset.slot = i;
+    slot.innerHTML = `<span class="slot-num">${i + 1}</span>`;
+    slot.addEventListener('click', () => onSlotClick(i));
+    board.appendChild(slot);
+  }
+
+  // ── Build Tray Pieces (shuffled) ──
+  const order = shuffle(Array.from({length: TOTAL}, (_, i) => i));
+  const tray  = document.getElementById('tray');
+
+  order.forEach(pid => {
+    const piece = createPieceEl(pid);
+    tray.appendChild(piece);
+  });
+
+  function createPieceEl(pid) {
+    const el = document.createElement('div');
+    el.className = 'piece';
+    el.dataset.piece = pid;
+    el.id = 'piece-' + pid;
+    el.title = 'Piece ' + (pid + 1);
+    // Label
+    el.innerHTML = `<span style="
+      position:absolute; bottom:4px; right:6px;
+      font-family:'Orbitron',sans-serif; font-size:0.55rem;
+      color:rgba(255,255,255,0.4); pointer-events:none;
+    ">${pid + 1}</span>`;
+    applyBg(el, pid);
+    el.addEventListener('click', () => onPieceClick(pid));
+    return el;
+  }
+
+  function applyBg(el, pid) {
+    el.style.backgroundImage = `url('${IMAGE_SRC}')`;
+    el.style.backgroundSize  = '300% 300%';
+    el.style.backgroundPosition = bpx(pid);
+  }
+
+  // ── Fallback: placeholder gradient if image not found ──
+  img.onload = () => {
+    // Image loaded — pieces already have background set, nothing extra needed
+  };
+
+  img.onerror = () => {
+    // Swap to gradient placeholder for all pieces
+    document.querySelectorAll('.piece, .piece-in-slot').forEach(el => {
+      const pid = parseInt(el.dataset.piece ?? el.dataset.slot, 10);
+      const hues = [220, 260, 200, 280, 240, 180, 300, 220, 260];
+      el.style.backgroundImage = `
+        linear-gradient(135deg,
+          hsl(${hues[pid]}, 60%, 25%) 0%,
+          hsl(${hues[pid] + 40}, 50%, 18%) 100%
+        )
+      `;
+      el.style.backgroundSize     = 'cover';
+      el.style.backgroundPosition = '0 0';
+      // Add a "?" overlay hint
+      if (!el.querySelector('.ph-text')) {
+        const span = document.createElement('span');
+        span.className = 'ph-text';
+        span.style.cssText = `
+          position:absolute; inset:0; display:flex; align-items:center;
+          justify-content:center; font-size:1.4rem; color:rgba(255,255,255,0.25);
+          pointer-events:none;
+        `;
+        span.textContent = '?';
+        el.appendChild(span);
+      }
+    });
+    // Also update reveal canvas placeholder
+    drawRevealPlaceholder();
+  };
+
+  img.src = IMAGE_SRC;
+
+  // ── Interactions ──
+  function onPieceClick(pid) {
+    const el = document.getElementById('piece-' + pid);
+    if (!el || locked.includes(false) === false) return; // all done
+
+    if (selectedPiece === pid) {
+      // Deselect
+      el.classList.remove('selected');
+      selectedPiece = null;
+    } else {
+      // Deselect previous
+      if (selectedPiece !== null) {
+        const prev = document.getElementById('piece-' + selectedPiece);
+        if (prev) prev.classList.remove('selected');
+      }
+      selectedPiece = pid;
+      el.classList.add('selected');
+    }
+  }
+
+  function onSlotClick(slotId) {
+    if (locked[slotId]) return; // slot already filled
+    if (selectedPiece === null) return; // nothing selected
+
+    const pid = selectedPiece;
+
+    if (pid === slotId) {
+      // ✓ Correct placement!
+      placePiece(pid, slotId);
+    } else {
+      // ✗ Wrong slot — flash red then return
+      const slot = board.children[slotId];
+      slot.classList.add('target-active');
+      setTimeout(() => slot.classList.remove('target-active'), 400);
+
+      const pieceEl = document.getElementById('piece-' + pid);
+      if (pieceEl) {
+        pieceEl.classList.remove('selected');
+        pieceEl.style.borderColor = 'var(--red)';
+        pieceEl.style.boxShadow = '0 0 14px rgba(248,113,113,0.5)';
+        setTimeout(() => {
+          pieceEl.style.borderColor = '';
+          pieceEl.style.boxShadow = '';
+        }, 500);
+      }
+      selectedPiece = null;
+    }
+  }
+
+  function placePiece(pid, slotId) {
+    locked[slotId] = true;
+    placedCount++;
+    document.getElementById('placed').textContent = placedCount;
+
+    // Remove piece from tray
+    const pieceEl = document.getElementById('piece-' + pid);
+    if (pieceEl) {
+      pieceEl.classList.remove('selected');
+      pieceEl.remove();
+    }
+    selectedPiece = null;
+
+    // Fill slot
+    const slot = board.children[slotId];
+    slot.classList.add('locked');
+    slot.querySelector('.slot-num').remove();
+
+    const slotPiece = document.createElement('div');
+    slotPiece.className = 'piece locked-piece piece-in-slot';
+    slotPiece.dataset.piece = pid;
+    slotPiece.style.width  = '100%';
+    slotPiece.style.height = '100%';
+    slotPiece.style.borderRadius = '4px';
+    applyBg(slotPiece, pid);
+    slot.appendChild(slotPiece);
+
+    if (placedCount === TOTAL) {
+      setTimeout(showReveal, 700);
+    }
+  }
+
+  function showReveal() {
+    const overlay = document.getElementById('reveal-overlay');
+    const canvas  = document.getElementById('reveal-canvas');
+    const ctx     = canvas.getContext('2d');
+    const size    = 240;
+    canvas.width  = size;
+    canvas.height = size;
+
+    if (img.complete && img.naturalWidth > 0) {
+      ctx.drawImage(img, 0, 0, size, size);
+    } else {
+      drawRevealPlaceholder(canvas, ctx);
+    }
+
+    overlay.classList.add('show');
+    launchConfetti(400);
+  }
+
+  function drawRevealPlaceholder(canvas, ctx) {
+    if (!canvas) {
+      canvas = document.getElementById('reveal-canvas');
+      ctx    = canvas.getContext('2d');
+    }
+    const size = canvas.width || 240;
+    const grad = ctx.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, '#1e3a5f');
+    grad.addColorStop(1, '#3b1f6e');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.font = 'bold 80px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('?', size / 2, size / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '14px monospace';
+    ctx.fillText('Add mentor.jpg', size / 2, size - 24);
+  }
+
+  // ── Confetti ──
+  const confettiCanvas = document.getElementById('confetti-canvas');
+  const cctx = confettiCanvas.getContext('2d');
+  let particles = [];
+  let confettiFrame = null;
+
+  const COLORS = ['#4f8ef7','#a855f7','#22d3a0','#fbbf24','#f87171','#f0abfc','#34d399','#60a5fa'];
+
+  function resizeConfetti() {
+    confettiCanvas.width  = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+  }
+  resizeConfetti();
+  window.addEventListener('resize', resizeConfetti);
+
+  function makeParticle(x, y) {
+    return {
+      x, y,
+      vx: (Math.random() - 0.5) * 14,
+      vy: Math.random() * -18 - 4,
+      w: Math.random() * 10 + 5,
+      h: Math.random() * 5 + 3,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      angle: Math.random() * 360,
+      spin: (Math.random() - 0.5) * 10,
+      gravity: 0.45,
+      life: 1,
+      decay: Math.random() * 0.012 + 0.008
+    };
+  }
+
+  function launchConfetti(count, x, y) {
+    const cx = x ?? confettiCanvas.width  / 2;
+    const cy = y ?? confettiCanvas.height / 3;
+    for (let i = 0; i < count; i++) particles.push(makeParticle(cx, cy));
+    if (!confettiFrame) animateConfetti();
+  }
+
+  function animateConfetti() {
+    cctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    particles = particles.filter(p => p.life > 0);
+
+    particles.forEach(p => {
+      p.x     += p.vx;
+      p.vy    += p.gravity;
+      p.y     += p.vy;
+      p.angle += p.spin;
+      p.life  -= p.decay;
+
+      cctx.save();
+      cctx.globalAlpha = Math.max(0, p.life);
+      cctx.translate(p.x, p.y);
+      cctx.rotate(p.angle * Math.PI / 180);
+      cctx.fillStyle = p.color;
+      cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      cctx.restore();
+    });
+
+    if (particles.length > 0) {
+      confettiFrame = requestAnimationFrame(animateConfetti);
+    } else {
+      confettiFrame = null;
+      cctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    }
+  }
+
+  // Click anywhere on the overlay → burst confetti at click position
+  document.getElementById('reveal-overlay').addEventListener('click', e => {
+    launchConfetti(150, e.clientX, e.clientY);
+  });
+
+  // ── Shuffle ──
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+  </script>
+</body>
+</html>

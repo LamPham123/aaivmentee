@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Who Am I? — Mystery Quest</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .intro-art {
+      font-size: 3rem;
+      text-align: center;
+      margin: 24px 0 16px;
+      filter: drop-shadow(0 0 12px rgba(79,142,247,0.6));
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .mission-list {
+      list-style: none;
+      padding: 0;
+      counter-reset: mission;
+    }
+
+    .mission-list li {
+      counter-increment: mission;
+      padding: 12px 0 12px 48px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      color: var(--text);
+    }
+
+    .mission-list li:last-child { border-bottom: none; }
+
+    .mission-list li::before {
+      content: counter(mission, decimal-leading-zero);
+      position: absolute;
+      left: 0;
+      top: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .mission-list li .tag {
+      display: inline-block;
+      background: rgba(79,142,247,0.1);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .start-btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      border-radius: 10px;
+      margin-top: 32px;
+      transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 0 0 rgba(79,142,247,0);
+    }
+
+    .start-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 24px rgba(79,142,247,0.35);
+    }
+
+    .warning-box {
+      background: rgba(251,191,36,0.07);
+      border: 1px solid var(--yellow);
+      border-radius: 8px;
+      padding: 12px 18px;
+      color: var(--yellow);
+      font-size: 0.85rem;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .glitch {
+      animation: glitch 4s infinite;
+    }
+
+    @keyframes glitch {
+      0%, 92%, 100% { text-shadow: none; clip-path: none; }
+      93% { text-shadow: 2px 0 var(--red); clip-path: inset(10% 0 80% 0); }
+      94% { text-shadow: -2px 0 var(--accent2); clip-path: inset(80% 0 5% 0); }
+      95% { clip-path: none; text-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="site-header">
+      <p class="stage-label">Incoming Transmission</p>
+      <h1 class="title glitch">WHO AM I?</h1>
+      <h2 class="subtitle">A Mystery Quest — 5 Stages</h2>
+    </header>
+
+    <div class="intro-art">🎮🎸❓</div>
+
+    <div class="panel">
+      <p class="panel-title">Mission Briefing</p>
+      <p>
+        Someone in your life has left you a challenge. They share your taste in games,
+        music, and technology — but they want to see if you can piece together who they are
+        before the final reveal.
+      </p>
+      <p>
+        Complete all five stages. Each one gives you a clue. The final stage reveals everything.
+      </p>
+      <p class="dim">No skipping. No cheating. Good luck.</p>
+    </div>
+
+    <div class="panel">
+      <p class="panel-title">Your Missions</p>
+      <ul class="mission-list">
+        <li>
+          Decode an encrypted message <span class="tag">CIPHER</span>
+        </li>
+        <li>
+          Solve a chain of riddles <span class="tag">RIDDLES</span>
+        </li>
+        <li>
+          Complete a crossword puzzle <span class="tag">CROSSWORD</span>
+        </li>
+        <li>
+          Crack a logic grid <span class="tag">LOGIC</span>
+        </li>
+        <li>
+          Assemble the final reveal <span class="tag">JIGSAW</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="warning-box">
+      ⚠ &nbsp; Each stage must be completed in order. No shortcuts.
+    </div>
+
+    <a href="puzzle1.html" class="start-btn">ACCEPT MISSION &nbsp;→</a>
+  </div>
+</body>
+</html>
